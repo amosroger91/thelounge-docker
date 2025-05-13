@@ -12,10 +12,8 @@ LABEL org.opencontainers.image.licenses "MIT"
 
 ENV NODE_ENV production
 ENV THELOUNGE_HOME "/var/opt/thelounge"
-# Declare THELOUNGE_HOME as a volume for persistent data
 VOLUME "${THELOUNGE_HOME}"
 
-# Expose HTTP.
 ENV PORT 9000
 EXPOSE ${PORT}
 
@@ -31,11 +29,5 @@ RUN apk --update --no-cache --virtual build-deps add python3 build-base git && \
     apk del --purge build-deps && \
     rm -rf /root/.cache /tmp /usr/bin/python
 
-# Switch to root to ensure permissions if needed
-USER root
-
-# Switch back to non-root user for runtime
-USER node
-
-# On container start: ensure users directory exists (volume might be empty), create admin user, then start
-CMD ["sh", "-lc", "mkdir -p \"$THELOUNGE_HOME/users\" && thelounge add admin --password password || true && thelounge start"]
+# Ensure directories exist at runtime and have correct permissions, then add admin user and start
+CMD ["sh", "-lc", "mkdir -p '$THELOUNGE_HOME/users' '$THELOUNGE_HOME/logs' '$THELOUNGE_HOME/packages/node_modules' && chown -R node:node '$THELOUNGE_HOME' && thelounge add admin --password password --silent || true && thelounge start"]
