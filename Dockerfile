@@ -11,7 +11,6 @@ LABEL org.opencontainers.image.version "${THELOUNGE_VERSION}"
 LABEL org.opencontainers.image.licenses "MIT"
 
 ENV NODE_ENV production
-
 ENV THELOUNGE_HOME "/var/opt/thelounge"
 VOLUME "${THELOUNGE_HOME}"
 
@@ -19,15 +18,25 @@ VOLUME "${THELOUNGE_HOME}"
 ENV PORT 9000
 EXPOSE ${PORT}
 
-ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["thelounge", "start"]
-
+# Copy entrypoint and ensure it has exec permissions
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Install thelounge.
+# Install The Lounge
 RUN apk --update --no-cache --virtual build-deps add python3 build-base git && \
     ln -sf python3 /usr/bin/python && \
     yarn --non-interactive --frozen-lockfile global add thelounge@${THELOUNGE_VERSION} && \
     yarn --non-interactive cache clean && \
     apk del --purge build-deps && \
     rm -rf /root/.cache /tmp /usr/bin/python
+
+# Ensure data directory and users sub-dir exist, set permissions
+USER root
+RUN mkdir -p ${THELOUNGE_HOME}/users && \
+    chown -R node:node ${THELOUNGE_HOME}
+
+# Switch to non-root user
+USER node
+
+# On container start: create admin user if missing, set password, then start
+CMD ["sh", "-lc", "thelounge add admin --password password --silent || true && thelounge start"]
