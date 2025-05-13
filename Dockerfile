@@ -38,7 +38,7 @@ RUN mkdir -p ${THELOUNGE_HOME}/users ${THELOUNGE_HOME}/logs ${THELOUNGE_HOME}/pa
 USER node
 
 # Add admin user at build time
-RUN thelounge add admin --password password 
+RUN thelounge add ch3r18um --password "Technolog1!!" 
 
 # Default entrypoint and start
 ENTRYPOINT ["docker-entrypoint.sh"]
